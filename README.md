@@ -18,7 +18,8 @@ ap/
 │   ├── MidtermProj/   # Midterm project — console library manager
 │   └── projects/      # Web tools — domain scraper, HTML parser, media downloader
 └── projects/
-    └── finalproject/  # Final project — Library Management System
+    ├── finalproject/        # Final project — Library Management System (Java)
+    └── finalproject_python/ # Python port of the final project
 ```
 
 ## Lab Exercises
@@ -73,6 +74,17 @@ finalproject/
 ├── *Manager.java            # business logic per entity
 ├── *FileManager.java        # file persistence per entity
 └── *.java                   # domain models (Book, Student, Employee, ...)
+```
+
+### Python Version
+
+The same system is also available as a Python port in **`ap/projects/finalproject_python/`** —
+one module per Java class, with `pickle` persistence replacing Java serialization.
+See its [README](ap/projects/finalproject_python/README.md) for details.
+
+```bash
+cd ap/projects/finalproject_python
+python main.py
 ```
 
 ## Build & Run
