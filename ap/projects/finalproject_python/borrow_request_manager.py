@@ -1,11 +1,11 @@
 """Borrow request business logic — Python port of ap.projects.finalproject.BorrowRequestManager."""
-import borrow_request_file_manager
+import storage
 from borrow_request import BorrowRequest
 
 
 class BorrowRequestManager:
     def __init__(self):
-        self.borrow_requests = borrow_request_file_manager.load_borrow_requests()
+        self.borrow_requests = storage.load_borrow_requests()
         if self.borrow_requests is None:
             self.borrow_requests = []
 
@@ -72,4 +72,4 @@ class BorrowRequestManager:
             print(request)
 
     def _save_requests(self):
-        borrow_request_file_manager.save_borrow_requests(self.borrow_requests)
+        storage.save_borrow_requests(self.borrow_requests)

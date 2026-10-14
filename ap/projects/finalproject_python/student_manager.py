@@ -1,11 +1,11 @@
 """Student business logic — Python port of ap.projects.finalproject.StudentManager."""
-import student_file_manager
+import storage
 from student_statistics import StudentStatistics
 
 
 class StudentManager:
     def __init__(self):
-        self.students = student_file_manager.load_students()
+        self.students = storage.load_students()
         if self.students is None:
             self.students = []
 
@@ -43,7 +43,7 @@ class StudentManager:
 
         from student import Student
         self.students.append(Student(name, student_id, username, password))
-        student_file_manager.save_students(self.students)
+        storage.save_students(self.students)
         print("Student registration completed successfully.")
 
     def authenticate_student(self, username, password):
@@ -72,14 +72,14 @@ class StudentManager:
             student.password = new_password
             updated = True
         if updated:
-            student_file_manager.save_students(self.students)
+            storage.save_students(self.students)
         return updated
 
     def toggle_student_status(self, username):
         student = self.find_student_by_username(username)
         if student is not None:
             student.set_active(not student.is_active)
-            student_file_manager.save_students(self.students)
+            storage.save_students(self.students)
             return True
         return False
 

@@ -1,11 +1,11 @@
 """Employee business logic — Python port of ap.projects.finalproject.EmployeeManager."""
-import employee_file_manager
+import storage
 from employee import Employee
 
 
 class EmployeeManager:
     def __init__(self):
-        self.employees = employee_file_manager.load_employees()
+        self.employees = storage.load_employees()
         if not self.employees:
             self.employees = []
             self._initialize_default_employees()
@@ -61,4 +61,4 @@ class EmployeeManager:
             print(employee)
 
     def _save_employees(self):
-        employee_file_manager.save_employees(self.employees)
+        storage.save_employees(self.employees)

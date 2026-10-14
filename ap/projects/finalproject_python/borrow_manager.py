@@ -1,14 +1,14 @@
 """Borrow business logic — Python port of ap.projects.finalproject.BorrowManager."""
 from datetime import date, timedelta
 
-import borrow_file_manager
+import storage
 from borrow_record import BorrowRecord
 from student_borrow_report import StudentBorrowReport
 
 
 class BorrowManager:
     def __init__(self):
-        self.borrow_records = borrow_file_manager.load_borrow_records()
+        self.borrow_records = storage.load_borrow_records()
         if self.borrow_records is None:
             self.borrow_records = []
 
@@ -84,4 +84,4 @@ class BorrowManager:
         return [record for record in self.borrow_records if not record.is_returned]
 
     def _save_records(self):
-        borrow_file_manager.save_borrow_records(self.borrow_records)
+        storage.save_borrow_records(self.borrow_records)

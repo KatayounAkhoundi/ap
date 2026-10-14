@@ -1,11 +1,11 @@
 """Employee performance tracking — Python port of ap.projects.finalproject.EmployeePerformanceManager."""
-import employee_performance_file_manager
+import storage
 from employee_performance import EmployeePerformance
 
 
 class EmployeePerformanceManager:
     def __init__(self):
-        self.performance_records = employee_performance_file_manager.load_performance_records()
+        self.performance_records = storage.load_performance_records()
         if self.performance_records is None:
             self.performance_records = {}
 
@@ -67,4 +67,4 @@ class EmployeePerformanceManager:
             print(f"{i}. {performance}")
 
     def _save_records(self):
-        employee_performance_file_manager.save_performance_records(self.performance_records)
+        storage.save_performance_records(self.performance_records)

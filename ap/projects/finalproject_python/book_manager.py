@@ -1,11 +1,11 @@
 """Book business logic — Python port of ap.projects.finalproject.BookManager."""
-import book_file_manager
+import storage
 from book import Book
 
 
 class BookManager:
     def __init__(self):
-        self.books = book_file_manager.load_books()
+        self.books = storage.load_books()
         if self.books is None:
             self.books = []
 
@@ -189,4 +189,4 @@ class BookManager:
         return False
 
     def _save_books(self):
-        book_file_manager.save_books(self.books)
+        storage.save_books(self.books)
