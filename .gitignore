@@ -26,3 +26,8 @@ replay_pid*
 # Python
 __pycache__/
 *.pyc
+
+# Runtime data files
+*.dat
+*.db
+storage_config.json
