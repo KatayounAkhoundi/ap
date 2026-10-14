@@ -50,3 +50,54 @@ ap/
 - `DirectoryTools` / `FileTools` — file-system helpers
 
 Target domain and save directory are configured in `Conf.java`.
+
+## Final Project — Library Management System
+
+**`ap/projects/finalproject/`** — a complete console-based library management system with role-based menus for students and employees.
+
+### Features
+
+- **Student management** — sign-up, sign-in, and profile handling (`StudentManager`, `StudentFileManager`)
+- **Book management** — add, search, and list books with sample data initialization (`BookManager`)
+- **Borrow workflow** — borrow requests, approval/rejection by employees, borrow records and return tracking (`BorrowRequestManager`, `BorrowManager`)
+- **Employee management** — employee accounts and performance tracking (`EmployeeManager`, `EmployeePerformanceManager`)
+- **Statistics & reports** — borrow statistics, per-student reports, and employee performance reports (`StatisticsManager`, `BorrowStatistics`, `StudentStatistics`)
+- **File persistence** — every entity is persisted through its own file manager so data survives restarts
+
+### Class Layout
+
+```
+finalproject/
+├── LibrarySystem.java       # application core and session state
+├── MenuHandler.java         # role-based console menus
+├── *Manager.java            # business logic per entity
+├── *FileManager.java        # file persistence per entity
+└── *.java                   # domain models (Book, Student, Employee, ...)
+```
+
+## Build & Run
+
+Requires **JDK 8 or later**. All sources are plain Java with no external dependencies.
+
+```bash
+# Compile the final project
+javac -d out ap/projects/finalproject/*.java
+
+# Run the library management system
+java -cp out ap.projects.finalproject.LibrarySystem
+```
+
+Run other exercises the same way, using their package-qualified main class, e.g.:
+
+```bash
+javac -d out ap/exercises/EX7/*.java
+java -cp out ap.exercises.EX7.Main
+```
+
+For `EX7`, the storage backend (`tabsplit`, `json`, or `sqlite`) is chosen via `config.properties`, created automatically on first run.
+
+## Author
+
+- **Katayoun Akhoundi** — [@KatayounAkhoundi](https://github.com/KatayounAkhoundi)
+
+> Educational repository for course purposes.
