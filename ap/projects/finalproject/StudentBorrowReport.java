@@ -3,42 +3,45 @@ package ap.projects.finalproject;
 import java.util.List;
 
 public class StudentBorrowReport {
-    private String studentUsername;
-    private List<BorrowRecord> borrowHistory;
-    private int totalBorrows;
-    private int activeBorrows;
-    private int overdueBorrows;
-    private int returnedBorrows;
+    private final String studentUsername;
+    private final List<BorrowRecord> borrowHistory;
+    private final int totalBorrows;
+    private final int notDeliveredCount;
+    private final int activeBorrows;
+    private final int currentlyOverdueCount;
+    private final int lateReturnCount;
+    private final int returnedBorrows;
 
     public StudentBorrowReport(String studentUsername, List<BorrowRecord> borrowHistory) {
         this.studentUsername = studentUsername;
         this.borrowHistory = borrowHistory;
         this.totalBorrows = borrowHistory.size();
-        this.activeBorrows = (int) borrowHistory.stream()
-                .filter(record -> !record.isReturned())
+        this.notDeliveredCount = (int) borrowHistory.stream()
+                .filter(record -> !record.isPickedUp() && !record.isReturned())
                 .count();
-        this.overdueBorrows = (int) borrowHistory.stream()
+        this.activeBorrows = (int) borrowHistory.stream()
+                .filter(record -> record.isPickedUp() && !record.isReturned())
+                .count();
+        this.currentlyOverdueCount = (int) borrowHistory.stream()
                 .filter(BorrowRecord::isOverdue)
+                .count();
+        this.lateReturnCount = (int) borrowHistory.stream()
+                .filter(BorrowRecord::isReturnedLate)
                 .count();
         this.returnedBorrows = (int) borrowHistory.stream()
                 .filter(BorrowRecord::isReturned)
                 .count();
     }
 
-    public String getStudentUsername() { return studentUsername; }
-    public List<BorrowRecord> getBorrowHistory() { return borrowHistory; }
-    public int getTotalBorrows() { return totalBorrows; }
-    public int getActiveBorrows() { return activeBorrows; }
-    public int getOverdueBorrows() { return overdueBorrows; }
-    public int getReturnedBorrows() { return returnedBorrows; }
-
     public void displayReport() {
         System.out.println("\n=== Student Borrow Report ===");
         System.out.println("Student Username: " + studentUsername);
         System.out.println("Total Borrows: " + totalBorrows);
+        System.out.println("Not Delivered Yet (Ready for Pickup): " + notDeliveredCount);
         System.out.println("Active Borrows: " + activeBorrows);
-        System.out.println("Overdue Borrows: " + overdueBorrows);
-        System.out.println("Returned Borrows: " + returnedBorrows);
+        System.out.println("Currently Overdue: " + currentlyOverdueCount);
+        System.out.println("Returned Late: " + lateReturnCount);
+        System.out.println("Returned: " + returnedBorrows);
 
         System.out.println("\n--- Borrow History ---");
         if (borrowHistory.isEmpty()) {
@@ -47,12 +50,14 @@ public class StudentBorrowReport {
             borrowHistory.forEach(System.out::println);
         }
 
-        System.out.println("\n--- Statistics ---");
         double returnRate = totalBorrows > 0 ? (returnedBorrows * 100.0 / totalBorrows) : 0;
-        System.out.printf("Return Rate: %.1f%%\n", returnRate);
+        System.out.printf("\nReturn Rate: %.1f%%\n", returnRate);
 
-        if (overdueBorrows > 0) {
-            System.out.println("⚠️  This student has " + overdueBorrows + " overdue book(s)!");
+        if (currentlyOverdueCount > 0) {
+            System.out.println("This student has " + currentlyOverdueCount + " currently overdue book(s)!");
+        }
+        if (lateReturnCount > 0) {
+            System.out.println("This student has returned " + lateReturnCount + " book(s) late!");
         }
     }
 }

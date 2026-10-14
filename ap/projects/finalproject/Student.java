@@ -42,6 +42,14 @@ public class Student implements Serializable {
         isActive = active;
     }
 
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
     @Override
     public String toString() {
         String status = isActive ? "Active" : "Inactive";

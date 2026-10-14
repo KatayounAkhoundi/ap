@@ -9,14 +9,17 @@ public class BorrowRequest implements Serializable {
     private String bookIsbn;
     private LocalDate requestDate;
     private LocalDate desiredBorrowDate;
+    private LocalDate desiredEndDate;
     private String status; // "pending", "approved", "rejected"
     private String rejectionReason;
 
-    public BorrowRequest(String studentUsername, String bookIsbn, LocalDate desiredBorrowDate) {
+    public BorrowRequest(String studentUsername, String bookIsbn,
+                         LocalDate desiredBorrowDate, LocalDate desiredEndDate) {
         this.studentUsername = studentUsername;
         this.bookIsbn = bookIsbn;
         this.requestDate = LocalDate.now();
         this.desiredBorrowDate = desiredBorrowDate;
+        this.desiredEndDate = desiredEndDate;
         this.status = "pending";
         this.rejectionReason = "";
     }
@@ -25,6 +28,7 @@ public class BorrowRequest implements Serializable {
     public String getBookIsbn() { return bookIsbn; }
     public LocalDate getRequestDate() { return requestDate; }
     public LocalDate getDesiredBorrowDate() { return desiredBorrowDate; }
+    public LocalDate getDesiredEndDate() { return desiredEndDate; }
     public String getStatus() { return status; }
     public String getRejectionReason() { return rejectionReason; }
 
@@ -50,16 +54,20 @@ public class BorrowRequest implements Serializable {
         return "rejected".equals(status);
     }
 
-    public boolean isForToday() {
-        return desiredBorrowDate.equals(LocalDate.now());
+    public boolean isApprovableDate() {
+        LocalDate today = LocalDate.now();
+        return desiredBorrowDate.equals(today) || desiredBorrowDate.equals(today.minusDays(1));
     }
 
     @Override
     public String toString() {
+        String desired = desiredEndDate != null
+                ? desiredBorrowDate + " to " + desiredEndDate
+                : desiredBorrowDate.toString();
         return "Student: " + studentUsername +
                 " | Book ISBN: " + bookIsbn +
                 " | Request Date: " + requestDate +
-                " | Desired Date: " + desiredBorrowDate +
+                " | Desired Period: " + desired +
                 " | Status: " + status +
                 (isRejected() ? " | Reason: " + rejectionReason : "");
     }

@@ -1,6 +1,5 @@
 package ap.projects.finalproject;
 
-import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -24,6 +23,11 @@ public class EmployeeManager {
     }
 
     public void registerEmployee(String name, String employeeId, String username, String password, String role) {
+        if (username.isEmpty() || password.isEmpty()) {
+            System.out.println("Username and password cannot be empty.");
+            return;
+        }
+
         if (isUsernameTaken(username)) {
             System.out.println("This username already exists. Please choose a different username.");
             return;
@@ -63,12 +67,8 @@ public class EmployeeManager {
         return employees.stream().anyMatch(e -> e.getUsername().equals(username));
     }
 
-    public int getEmployeeCount() {
-        return employees.size();
-    }
-
     public void displayAllEmployees() {
-        System.out.println("\n--- List of  Employees ---");
+        System.out.println("\n--- List of Employees ---");
         if (employees.isEmpty()) {
             System.out.println("No employees registered yet.");
             return;

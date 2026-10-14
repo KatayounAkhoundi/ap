@@ -49,6 +49,14 @@ public class BorrowRecord implements Serializable {
         return isPickedUp && !isReturned && LocalDate.now().isAfter(dueDate);
     }
 
+    public boolean isReturnedLate() {
+        return isReturned && returnDate != null && dueDate != null && returnDate.isAfter(dueDate);
+    }
+
+    public boolean isLate() {
+        return isReturnedLate() || isOverdue();
+    }
+
     public boolean isReadyForPickup() {
         return !isPickedUp && !isReturned;
     }
@@ -64,7 +72,9 @@ public class BorrowRecord implements Serializable {
         String status;
 
         if (isReturned) {
-            status = "Returned on " + returnDate.format(formatter);
+            status = isReturnedLate()
+                    ? "Returned late on " + returnDate.format(formatter)
+                    : "Returned on " + returnDate.format(formatter);
         } else if (isPickedUp) {
             status = isOverdue() ? "OVERDUE (" + getDaysOverdue() + " days)" : "Due on " + dueDate.format(formatter);
         } else {

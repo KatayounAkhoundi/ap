@@ -14,57 +14,53 @@ public class BookManager {
         this.books = fileManager.loadBooks();
         if (this.books == null) {
             this.books = new ArrayList<>();
-            initializeSampleBooks();
         }
     }
 
-    private void initializeSampleBooks() {
-        books.add(new Book("Java Programming", "Brad Pitt", 2020, "1111"));
-        books.add(new Book("Data Structures", "Jack Johnson", 2019, "2222"));
-        books.add(new Book("Algorithms", "Robert smith", 2018, "3333"));
-        books.add(new Book("Database Systems", " Garcia Morone", 2021, "4444"));
-        books.add(new Book("Algorythm", "Mark Tin", 2011, "5555"));
-        saveBooks();
-    }
-
-    public List<Book> searchBooks(String title, String author, String isbn) {
+    public List<Book> searchBooks(String title, String author, Integer year, String isbn) {
         return books.stream()
                 .filter(book ->
                         (title == null || title.isEmpty() || book.matchesTitleSearch(title)) &&
                                 (author == null || author.isEmpty() || book.matchesAuthorSearch(author)) &&
-                                (isbn == null || isbn.isEmpty() || book.matchesIsbnSearch(isbn))
-                )
+                                (year == null || book.matchesPublicationYear(year)) &&
+                                (isbn == null || isbn.isEmpty() || book.matchesIsbnSearch(isbn)))
                 .collect(Collectors.toList());
+    }
+
+    public List<Book> searchBooksByTitle(String title) {
+        if (title == null || title.isEmpty()) {
+            return new ArrayList<>();
+        }
+        return searchBooks(title, null, null, null);
     }
 
     public boolean editBook(String isbn, String newTitle, String newAuthor, Integer newYear) {
         Book book = findBookByIsbn(isbn);
-        if (book != null) {
-            if (newTitle != null && !newTitle.isEmpty()) {
-                book.setTitle(newTitle);
-            }
-            if (newAuthor != null && !newAuthor.isEmpty()) {
-                book.setAuthor(newAuthor);
-            }
-            if (newYear != null && newYear > 0) {
-                book.setPublicationYear(newYear);
-            }
-            saveBooks();
-            return true;
+        if (book == null) {
+            return false;
         }
-        return false;
+        if (newTitle != null && !newTitle.isEmpty()) {
+            book.setTitle(newTitle);
+        }
+        if (newAuthor != null && !newAuthor.isEmpty()) {
+            book.setAuthor(newAuthor);
+        }
+        if (newYear != null && newYear > 0) {
+            book.setPublicationYear(newYear);
+        }
+        saveBooks();
+        return true;
     }
 
-    public void editBookFromInput(Scanner scanner, String isbn) {
+    public boolean editBookFromInput(Scanner scanner, String isbn) {
         Book book = findBookByIsbn(isbn);
         if (book == null) {
             System.out.println("Book with ISBN " + isbn + " not found.");
-            return;
+            return false;
         }
 
         System.out.println("\nCurrent book information:");
         System.out.println(book.getFullBookInfo());
-
         System.out.println("\nEnter new information (press Enter to keep current value):");
 
         System.out.print("New title (current: " + book.getTitle() + "): ");
@@ -82,42 +78,40 @@ public class BookManager {
                 newYear = Integer.parseInt(yearInput);
                 if (newYear < 1000 || newYear > 2100) {
                     System.out.println("Invalid year. Must be between 1000 and 2100.");
-                    return;
+                    return false;
                 }
             } catch (NumberFormatException e) {
                 System.out.println("Invalid year format.");
-                return;
+                return false;
             }
         }
 
         if (editBook(isbn, newTitle, newAuthor, newYear)) {
             System.out.println("Book information updated successfully!");
-            System.out.println("Updated information:");
             System.out.println(findBookByIsbn(isbn).getFullBookInfo());
-        } else {
-            System.out.println("Failed to update book information.");
+            return true;
         }
+        System.out.println("Failed to update book information.");
+        return false;
     }
 
     public void searchBooksFromInput(Scanner scanner) {
         System.out.println("\n--- Advanced Book Search ---");
+        String title = readOptionalLine(scanner, "Title (press Enter to skip): ");
+        String author = readOptionalLine(scanner, "Author (press Enter to skip): ");
+        Integer year = readOptionalYear(scanner);
+        String isbn = readOptionalLine(scanner, "ISBN (press Enter to skip): ");
 
-        System.out.print("Title (press Enter to skip): ");
-        String title = scanner.nextLine();
+        displaySearchResults(searchBooks(title, author, year, isbn), true);
+    }
 
-        System.out.print("Author (press Enter to skip): ");
-        String author = scanner.nextLine();
+    public void searchBooksForStudent(Scanner scanner) {
+        System.out.println("\n--- Book Search ---");
+        String title = readOptionalLine(scanner, "Title (press Enter to skip): ");
+        String author = readOptionalLine(scanner, "Author (press Enter to skip): ");
+        Integer year = readOptionalYear(scanner);
 
-        System.out.print("ISBN (press Enter to skip): ");
-        String isbn = scanner.nextLine();
-
-        List<Book> results = searchBooks(
-                title.isEmpty() ? null : title,
-                author.isEmpty() ? null : author,
-                isbn.isEmpty() ? null : isbn
-        );
-
-        displaySearchResults(results);
+        displaySearchResults(searchBooks(title, author, year, null), true);
     }
 
     public void addNewBook(Book book) {
@@ -158,6 +152,25 @@ public class BookManager {
         return new Book(title, author, year, isbn);
     }
 
+    private String readOptionalLine(Scanner scanner, String prompt) {
+        System.out.print(prompt);
+        return scanner.nextLine();
+    }
+
+    private Integer readOptionalYear(Scanner scanner) {
+        System.out.print("Publication year (press Enter to skip): ");
+        String input = scanner.nextLine();
+        if (input.isEmpty()) {
+            return null;
+        }
+        try {
+            return Integer.parseInt(input);
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid year format, ignoring the year filter.");
+            return null;
+        }
+    }
+
     private int getIntInput(Scanner scanner, int min, int max) {
         while (true) {
             try {
@@ -172,39 +185,8 @@ public class BookManager {
         }
     }
 
-    public List<Book> getAllBooks() {
-        return new ArrayList<>(books);
-    }
-
     public int getTotalBooksCount() {
         return books.size();
-    }
-
-    public int getAvailableBooksCount() {
-        return (int) books.stream()
-                .filter(Book::isAvailable)
-                .count();
-    }
-
-    public int getBorrowedBooksCount() {
-        return (int) books.stream()
-                .filter(book -> !book.isAvailable())
-                .count();
-    }
-
-    public void addBook(Book book) {
-        books.add(book);
-        saveBooks();
-    }
-
-    public List<Book> searchBooksByTitle(String title) {
-        if (title == null || title.isEmpty()) {
-            return new ArrayList<>();
-        }
-
-        return books.stream()
-                .filter(book -> book.matchesTitleSearch(title))
-                .collect(Collectors.toList());
     }
 
     public Book findBookByIsbn(String isbn) {
@@ -221,9 +203,7 @@ public class BookManager {
             return;
         }
 
-        books.forEach(book -> {
-            System.out.println(book.getFullBookInfo());
-        });
+        books.forEach(book -> System.out.println(book.getFullBookInfo()));
     }
 
     public void displayAvailableBooks() {
@@ -237,21 +217,19 @@ public class BookManager {
             return;
         }
 
-        availableBooks.forEach(book -> {
-            System.out.println(book.getBookInfo());
-        });
+        availableBooks.forEach(book -> System.out.println(book.getBookInfo()));
     }
 
-    public void displaySearchResults(List<Book> results) {
+    public void displaySearchResults(List<Book> results, boolean includeStatus) {
         if (results.isEmpty()) {
             System.out.println("No books found matching your criteria.");
-        } else {
-            System.out.println("\n--- Search Results ---");
-            results.forEach(book -> {
-                System.out.println(book.getFullBookInfo());
-            });
-            System.out.println("Found " + results.size() + " book(s)");
+            return;
         }
+
+        System.out.println("\n--- Search Results ---");
+        results.forEach(book ->
+                System.out.println(includeStatus ? book.getFullBookInfo() : book.getBookInfo()));
+        System.out.println("Found " + results.size() + " book(s)");
     }
 
     public boolean borrowBook(String isbn) {

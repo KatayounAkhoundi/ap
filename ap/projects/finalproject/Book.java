@@ -70,4 +70,8 @@ public class Book implements Serializable {
         }
         return this.author.toLowerCase().contains(searchAuthor.toLowerCase());
     }
+
+    public boolean matchesPublicationYear(int year) {
+        return this.publicationYear == year;
+    }
 }

@@ -11,7 +11,7 @@ public class BookFileManager {
         try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(FILE_NAME))) {
             oos.writeObject(books);
         } catch (IOException e) {
-            System.out.println("Error saving books data: " );
+            System.out.println("Error saving books data: " + e.getMessage());
         }
     }
 
@@ -31,7 +31,7 @@ public class BookFileManager {
                 return new ArrayList<>();
             }
         } catch (IOException | ClassNotFoundException e) {
-            System.out.println("Error loading books data: ");
+            System.out.println("Error loading books data: " + e.getMessage());
             return new ArrayList<>();
         }
     }

@@ -1,6 +1,5 @@
 package ap.projects.finalproject;
 
-import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -22,72 +21,58 @@ public class StudentManager {
         return new StudentStatistics(students, borrowRecords);
     }
 
-    public List<String> getStudentsWithMostOverdue(int limit) {
-        return students.stream()
-                .filter(student -> student.isActive())
+    public void displayStudentsWithMostLate(int limit, List<BorrowRecord> borrowRecords) {
+        List<String> topLateStudents = students.stream()
                 .map(student -> {
-                    long overdueCount = getOverdueBorrowCount(student.getUsername());
-                    return new StudentOverdueInfo(student, overdueCount);
-                })
-                .filter(info -> info.getOverdueCount() > 0)
-                .sorted((i1, i2) -> Long.compare(i2.getOverdueCount(), i1.getOverdueCount()))
-                .limit(limit)
-                .map(StudentOverdueInfo::toString)
-                .collect(Collectors.toList());
-    }
-
-    private long getOverdueBorrowCount(String username) {
-        return (long) (Math.random() * 10);
-    }
-
-    public void displayStudentsWithMostOverdue(int limit, List<BorrowRecord> borrowRecords) {
-        List<String> topOverdueStudents = students.stream()
-                .filter(Student::isActive)
-                .map(student -> {
-                    long overdueCount = borrowRecords.stream()
-                            .filter(record -> record.getStudentUsername().equals(student.getUsername()) &&
-                                    record.isOverdue())
+                    long lateCount = borrowRecords.stream()
+                            .filter(record -> record.getStudentUsername().equals(student.getUsername())
+                                    && record.isLate())
                             .count();
-                    return new StudentOverdueInfo(student, overdueCount);
+                    return new StudentLateInfo(student, lateCount);
                 })
-                .filter(info -> info.getOverdueCount() > 0)
-                .sorted((i1, i2) -> Long.compare(i2.getOverdueCount(), i1.getOverdueCount()))
+                .filter(info -> info.getLateCount() > 0)
+                .sorted((i1, i2) -> Long.compare(i2.getLateCount(), i1.getLateCount()))
                 .limit(limit)
-                .map(StudentOverdueInfo::toString)
+                .map(StudentLateInfo::toString)
                 .collect(Collectors.toList());
 
-        System.out.println("\n=== Top " + limit + " Students with Most Overdue Books ===");
-        if (topOverdueStudents.isEmpty()) {
-            System.out.println("No students with overdue books.");
+        System.out.println("\n=== Top " + limit + " Students with Most Late Books ===");
+        if (topLateStudents.isEmpty()) {
+            System.out.println("No students with late books.");
             return;
         }
 
-        for (int i = 0; i < topOverdueStudents.size(); i++) {
-            System.out.println((i + 1) + ". " + topOverdueStudents.get(i));
+        for (int i = 0; i < topLateStudents.size(); i++) {
+            System.out.println((i + 1) + ". " + topLateStudents.get(i));
         }
     }
 
-    private static class StudentOverdueInfo {
-        private Student student;
-        private long overdueCount;
+    private static class StudentLateInfo {
+        private final Student student;
+        private final long lateCount;
 
-        public StudentOverdueInfo(Student student, long overdueCount) {
+        public StudentLateInfo(Student student, long lateCount) {
             this.student = student;
-            this.overdueCount = overdueCount;
+            this.lateCount = lateCount;
         }
 
-        public long getOverdueCount() {
-            return overdueCount;
+        public long getLateCount() {
+            return lateCount;
         }
 
         @Override
         public String toString() {
             return student.getName() + " (" + student.getUsername() + ") - " +
-                    overdueCount + " overdue books";
+                    lateCount + " late book(s)";
         }
     }
 
     public void registerStudent(String name, String studentId, String username, String password) {
+        if (username.isEmpty() || password.isEmpty()) {
+            System.out.println("Username and password cannot be empty.");
+            return;
+        }
+
         if (isUsernameTaken(username)) {
             System.out.println("This username already exists. Please choose a different username.");
             return;
@@ -113,30 +98,31 @@ public class StudentManager {
         return student;
     }
 
+    public boolean updateStudentInfo(String username, String newName, String newPassword) {
+        Student student = findStudentByUsername(username);
+        if (student == null) {
+            return false;
+        }
+
+        boolean updated = false;
+        if (newName != null && !newName.isEmpty()) {
+            student.setName(newName);
+            updated = true;
+        }
+        if (newPassword != null && !newPassword.isEmpty()) {
+            student.setPassword(newPassword);
+            updated = true;
+        }
+        if (updated) {
+            fileManager.saveStudents(students);
+        }
+        return updated;
+    }
+
     public boolean toggleStudentStatus(String username) {
         Student student = findStudentByUsername(username);
         if (student != null) {
             student.setActive(!student.isActive());
-            fileManager.saveStudents(students);
-            return true;
-        }
-        return false;
-    }
-
-    public boolean deactivateStudent(String username) {
-        Student student = findStudentByUsername(username);
-        if (student != null) {
-            student.setActive(false);
-            fileManager.saveStudents(students);
-            return true;
-        }
-        return false;
-    }
-
-    public boolean activateStudent(String username) {
-        Student student = findStudentByUsername(username);
-        if (student != null) {
-            student.setActive(true);
             fileManager.saveStudents(students);
             return true;
         }
@@ -150,68 +136,11 @@ public class StudentManager {
                 .orElse(null);
     }
 
-    public void displayInactiveStudents() {
-        List<Student> inactiveStudents = students.stream()
-                .filter(student -> !student.isActive())
-                .collect(ArrayList::new, ArrayList::add, ArrayList::addAll);
-
-        System.out.println("\n--- Inactive Students ---");
-        if (inactiveStudents.isEmpty()) {
-            System.out.println("No inactive students.");
-            return;
-        }
-
-        for (Student student : inactiveStudents) {
-            System.out.println(student);
-        }
-    }
-
-    public void displayActiveStudents() {
-        List<Student> activeStudents = students.stream()
-                .filter(Student::isActive)
-                .collect(ArrayList::new, ArrayList::add, ArrayList::addAll);
-
-        System.out.println("\n--- Active Students ---");
-        if (activeStudents.isEmpty()) {
-            System.out.println("No active students.");
-            return;
-        }
-
-        for (Student student : activeStudents) {
-            System.out.println(student);
-        }
-    }
-
-    public void displayStudents() {
-        System.out.println("\n--- List of Registered Students ---");
-
-        if (students.isEmpty()) {
-            System.out.println("No students have registered yet.");
-            return;
-        }
-
-        for (Student student : students) {
-            System.out.println(student);
-        }
-    }
-
     private boolean isUsernameTaken(String username) {
         return students.stream().anyMatch(s -> s.getUsername().equals(username));
     }
 
     public int getStudentCount() {
         return students.size();
-    }
-
-    public int getActiveStudentCount() {
-        return (int) students.stream()
-                .filter(Student::isActive)
-                .count();
-    }
-
-    public int getInactiveStudentCount() {
-        return (int) students.stream()
-                .filter(student -> !student.isActive())
-                .count();
     }
 }

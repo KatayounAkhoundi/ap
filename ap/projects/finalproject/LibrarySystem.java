@@ -1,492 +1,126 @@
 package ap.projects.finalproject;
 
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Scanner;
-import java.util.stream.Collectors;
 
 public class LibrarySystem {
-    private StudentManager studentManager;
-    private BookManager bookManager;
-    private BorrowManager borrowManager;
-    private BorrowRequestManager borrowRequestManager;
-    private EmployeeManager employeeManager;
-    private StatisticsManager statisticsManager;
-    private  EmployeePerformanceManager performanceManager;
-    private MenuHandler menuHandler;
+    private final Scanner scanner;
+    private final StudentManager studentManager;
+    private final BookManager bookManager;
+    private final BorrowManager borrowManager;
+    private final BorrowRequestManager borrowRequestManager;
+    private final EmployeeManager employeeManager;
+    private final StatisticsManager statisticsManager;
+    private final EmployeePerformanceManager performanceManager;
+    private final MenuHandler menuHandler;
     private Employee currentEmployee;
 
     public LibrarySystem() {
+        this.scanner = new Scanner(System.in);
         this.studentManager = new StudentManager();
         this.bookManager = new BookManager();
         this.borrowManager = new BorrowManager();
         this.borrowRequestManager = new BorrowRequestManager();
         this.employeeManager = new EmployeeManager();
         this.statisticsManager = new StatisticsManager(studentManager, bookManager, borrowManager);
-        this.statisticsManager.setEmployeeManager(employeeManager);
-        this.performanceManager= new EmployeePerformanceManager();
+        this.performanceManager = new EmployeePerformanceManager();
         this.menuHandler = new MenuHandler(this);
         this.currentEmployee = null;
     }
 
-    public void displayMonthlyBorrowStatistics() {
-        if (currentEmployee == null) {
-            System.out.println("Only employees can view monthly statistics.");
-            return;
-        }
-
-        borrowManager.displayMonthlyBorrowStatistics();
-    }
-    public void displayMostBorrowedBooks() {
-        if (currentEmployee == null) {
-            System.out.println("Only employees can view most borrowed books.");
-            return;
-        }
-
-        Scanner scanner = new Scanner(System.in);
-        System.out.print("Enter number of top books to display: ");
-        int limit = scanner.nextInt();
-        scanner.nextLine();
-
-        borrowManager.displayMostBorrowedBooks(limit);
+    public Scanner getScanner() {
+        return scanner;
     }
 
+    // ---------- Guest ----------
 
-    public void displayStudentStatistics() {
-        if (currentEmployee == null) {
-            System.out.println("Only employees can view student statistics.");
-            return;
-        }
-
-        StudentStatistics statistics = studentManager.generateStudentStatistics(
-                borrowManager.getAllBorrows()
-        );
-        statistics.displayStatistics();
-    }
-    public void displayStudentsWithMostOverdue() {
-        if (currentEmployee == null) {
-            System.out.println("Only employees can view overdue statistics.");
-            return;
-        }
-
-        Scanner scanner = new Scanner(System.in);
-        System.out.print("Enter number of top students to display: ");
-        int limit = scanner.nextInt();
-        scanner.nextLine();
-
-        studentManager.displayStudentsWithMostOverdue(limit, borrowManager.getAllBorrows());
+    public void displayStatistics() {
+        statisticsManager.displayStatistics();
     }
 
-    public void displayStudentsWithOverdueBooks() {
-        if (currentEmployee == null) {
-            System.out.println("Only employees can view this information.");
+    public void searchBooksByTitle() {
+        System.out.println("\n--- Search Books by Title ---");
+        System.out.print("Enter book title to search: ");
+        String title = scanner.nextLine();
+
+        if (title.isEmpty()) {
+            System.out.println("Please enter a title to search.");
             return;
         }
 
-        List<String> studentsWithOverdue = borrowManager.getStudentsWithOverdueBorrows();
-
-        System.out.println("\n=== Students with Overdue Books ===");
-        if (studentsWithOverdue.isEmpty()) {
-            System.out.println("No students have overdue books.");
-            return;
-        }
-
-        System.out.println("Total students with overdue books: " + studentsWithOverdue.size());
-        System.out.println("\nList of students:");
-        studentsWithOverdue.forEach(student -> {
-            List<BorrowRecord> overdueBooks = borrowManager.getStudentBorrows(student).stream()
-                    .filter(BorrowRecord::isOverdue)
-                    .collect(Collectors.toList());
-
-            System.out.println("Student: " + student + " - Overdue books: " + overdueBooks.size());
-            overdueBooks.forEach(record ->
-                    System.out.println("  - " + record.getBookIsbn() + " (Due: " + record.getDueDate() + ")")
-            );
-        });
-    }
-    public void recordBookAdded() {
-        if (currentEmployee != null) {
-            performanceManager.recordBookAdded(currentEmployee.getUsername());
-        }
+        bookManager.displaySearchResults(bookManager.searchBooksByTitle(title), false);
     }
 
-    public void recordBookEdited() {
-        if (currentEmployee != null) {
-            performanceManager.recordBookEdited(currentEmployee.getUsername());
-        }
+    // ---------- Student ----------
+
+    public void registerStudent(String name, String studentId, String username, String password) {
+        studentManager.registerStudent(name, studentId, username, password);
     }
 
-    public void recordBookBorrowed() {
-        if (currentEmployee != null) {
-            performanceManager.recordBookBorrowed(currentEmployee.getUsername());
-        }
-    }
-    public void recordBookReturned() {
-        if (currentEmployee != null) {
-            performanceManager.recordBookReturned(currentEmployee.getUsername());
-        }
+    public Student authenticateStudent(String username, String password) {
+        return studentManager.authenticateStudent(username, password);
     }
 
-    public void recordBorrowRequestApproved() {
-        if (currentEmployee != null) {
-            performanceManager.recordBorrowRequestApproved(currentEmployee.getUsername());
-        }
+    public void searchBooksForStudent() {
+        bookManager.searchBooksForStudent(scanner);
     }
 
-    public void recordBorrowRequestRejected() {
-        if (currentEmployee != null) {
-            performanceManager.recordBorrowRequestRejected(currentEmployee.getUsername());
-        }
-    }
-    public void displayEmployeePerformance() {
-        if (currentEmployee == null) {
-            System.out.println("Only employees can view performance reports.");
-            return;
-        }
-
-        performanceManager.displayEmployeePerformance(currentEmployee.getUsername());
+    public void displayAvailableBooks() {
+        bookManager.displayAvailableBooks();
     }
 
-    public void displayAllEmployeesPerformance() {
-        if (currentEmployee == null) {
-            System.out.println("Only employees can view performance reports.");
-            return;
-        }
-        performanceManager.displayAllEmployeesPerformance();
-    }
+    public void requestBorrowBook(Student student) {
+        System.out.println("\n--- Request to Borrow a Book ---");
+        bookManager.displayAvailableBooks();
 
-    public void displayTopPerformers() {
-        if (currentEmployee == null) {
-            System.out.println("Only employees can view performance reports.");
-            return;
-        }
-
-        Scanner scanner = new Scanner(System.in);
-        System.out.print("Enter number of top performers to display: ");
-        int limit = scanner.nextInt();
-        scanner.nextLine();
-
-        performanceManager.displayTopPerformers(limit);
-    }
-    public void displayMyPerformance() {
-        if (currentEmployee == null) {
-            System.out.println("Only employees can view their performance.");
-            return;
-        }
-
-        performanceManager.displayEmployeePerformance(currentEmployee.getUsername());
-    }
-    public void toggleStudentStatus() {
-        if (currentEmployee == null) {
-            System.out.println("Only employees can manage student status.");
-            return;
-        }
-
-        Scanner scanner = new Scanner(System.in);
-        System.out.println("\n--- Manage Student Status ---");
-
-        System.out.print("Enter student username: ");
-        String username = scanner.nextLine();
-
-        Student student = studentManager.findStudentByUsername(username);
-        if (student == null) {
-            System.out.println("Student not found.");
-            return;
-        }
-
-        if (studentManager.toggleStudentStatus(username)) {
-            String newStatus = studentManager.findStudentByUsername(username).isActive() ? "activated" : "deactivated";
-            System.out.println("Student status updated successfully. Student is now " + newStatus + ".");
-        } else {
-            System.out.println("Failed to update student status.");
-        }
-    }
-    public void deactivateStudent() {
-        if (currentEmployee == null) {
-            System.out.println("Only employees can deactivate students.");
-            return;
-        }
-
-        Scanner scanner = new Scanner(System.in);
-        System.out.println("\n--- Deactivate Student ---");
-
-        System.out.print("Enter student username: ");
-        String username = scanner.nextLine();
-
-        Student student = studentManager.findStudentByUsername(username);
-        if (student == null) {
-            System.out.println("Student not found.");
-            return;
-        }
-
-        if (!student.isActive()) {
-            System.out.println("Student is already inactive.");
-            return;
-        }
-
-        if (studentManager.deactivateStudent(username)) {
-            System.out.println("Student deactivated successfully.");
-        } else {
-            System.out.println("Failed to deactivate student.");
-        }
-    }
-    public void activateStudent() {
-        if (currentEmployee == null) {
-            System.out.println("Only employees can activate students.");
-            return;
-        }
-
-        Scanner scanner = new Scanner(System.in);
-        System.out.println("\n--- Activate Student ---");
-
-        System.out.print("Enter student username: ");
-        String username = scanner.nextLine();
-
-        Student student = studentManager.findStudentByUsername(username);
-        if (student == null) {
-            System.out.println("Student not found.");
-            return;
-        }
-
-
-        if (student.isActive()) {
-            System.out.println("Student is already active.");
-            return;
-        }
-        if (studentManager.activateStudent(username)) {
-            System.out.println("Student activated successfully.");
-        } else {
-            System.out.println("Failed to activate student.");
-        }
-    }
-
-    public void displayInactiveStudents() {
-        if (currentEmployee == null) {
-            System.out.println("Only employees can view inactive students.");
-            return;
-        }
-
-        studentManager.displayInactiveStudents();
-    }
-    public void displayActiveStudents() {
-        if (currentEmployee == null) {
-            System.out.println("Only employees can view active students.");
-            return;
-        }
-
-        studentManager.displayActiveStudents();
-    }
-    public void createBorrowRequest(Student student, String bookIsbn, LocalDate desiredDate) {
-        if (!student.isActive()) {
-            System.out.println("Your account is inactive. You cannot borrow books.");
-            return;
-        }
-
-        Book book = bookManager.findBookByIsbn(bookIsbn);
+        System.out.print("Enter ISBN of the book you want to borrow: ");
+        String isbn = scanner.nextLine();
+        Book book = bookManager.findBookByIsbn(isbn);
         if (book == null) {
             System.out.println("Invalid ISBN.");
             return;
         }
-
         if (!book.isAvailable()) {
             System.out.println("Book is not available.");
             return;
         }
 
-        borrowRequestManager.createBorrowRequest(student.getUsername(), bookIsbn, desiredDate);
-    }
-    public void pickupBook(Student student) {
-        System.out.println("\n--- Pickup Book ---");
-        borrowManager.displayStudentReadyForPickupBooks(student.getUsername());
-
-        Scanner scanner = new Scanner(System.in);
-        System.out.print("Enter ISBN of the book you want to pickup: ");
-        String isbn = scanner.nextLine();
-
-        if (borrowManager.markBookAsPickedUp(student.getUsername(), isbn)) {
-            System.out.println("Book picked up successfully! The due date starts from today.");
-
-            BorrowRecord record = borrowManager.findActiveBorrow(student.getUsername(), isbn);
-            if (record != null) {
-                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-                System.out.println("Due date: " + record.getDueDate().format(formatter));
+        System.out.print("Enter desired start date (YYYY-MM-DD) or press Enter for today: ");
+        String startInput = scanner.nextLine();
+        LocalDate startDate = LocalDate.now();
+        if (!startInput.isEmpty()) {
+            try {
+                startDate = LocalDate.parse(startInput);
+            } catch (Exception e) {
+                System.out.println("Invalid date format. Please use YYYY-MM-DD.");
+                return;
             }
-        } else {
-            System.out.println("Failed to pickup book. Book not found or not ready for pickup.");
         }
-    }
-
-    public void displayReadyForPickupBooks() {
-        if (currentEmployee == null) {
-            System.out.println("Only employees can view this information.");
+        if (startDate.isBefore(LocalDate.now())) {
+            System.out.println("Start date cannot be in the past.");
             return;
         }
 
-        borrowManager.displayReadyForPickupBooks();
-    }
-    public void markBookAsPickedUpByEmployee() {
-        if (currentEmployee == null) {
-            System.out.println("Only employees can perform this action.");
+        System.out.print("Enter desired end date (YYYY-MM-DD): ");
+        LocalDate endDate;
+        try {
+            endDate = LocalDate.parse(scanner.nextLine());
+        } catch (Exception e) {
+            System.out.println("Invalid date format. Please use YYYY-MM-DD.");
+            return;
+        }
+        if (!endDate.isAfter(startDate)) {
+            System.out.println("End date must be after the start date.");
             return;
         }
 
-        Scanner scanner = new Scanner(System.in);
-        System.out.println("\n--- Mark Book as Picked Up ---");
-
-        borrowManager.displayReadyForPickupBooks();
-
-        System.out.print("Enter student username: ");
-        String username = scanner.nextLine();
-
-        System.out.print("Enter book ISBN: ");
-        String isbn = scanner.nextLine();
-
-        if (borrowManager.markBookAsPickedUp(username, isbn)) {
-            System.out.println("Book marked as picked up successfully!");
-            recordBookBorrowed();
-        }else {
-            System.out.println("Failed to mark book as picked up. Record not found or not ready for pickup.");
-        }
-    }
-
-
-    public void viewStudentBorrowReport() {
-        if (currentEmployee == null) {
-            System.out.println("Only employees can view student reports.");
+        if (!student.isActive()) {
+            System.out.println("Your account is inactive. You cannot borrow books.");
             return;
         }
 
-        Scanner scanner = new Scanner(System.in);
-        System.out.println("\n=== Student Borrow Report ===");
-
-        System.out.print("Enter student username: ");
-        String username = scanner.nextLine();
-
-        Student student = studentManager.authenticateStudent(username, "");
-        if (student == null) {
-            System.out.println("Student not found.");
-            return;
-        }
-
-        StudentBorrowReport report = borrowManager.generateStudentReport(username);
-        report.displayReport();
-    }
-
-    public void viewBorrowStatistics() {
-        if (currentEmployee == null) {
-            System.out.println("Only employees can view borrow statistics.");
-            return;
-        }
-
-        borrowManager.displayBorrowStatistics();
-    }
-
-    public void viewStudentsWithOverdueBorrows() {
-        if (currentEmployee == null) {
-            System.out.println("Only employees can view this information.");
-            return;
-        }
-
-        List<String> students = borrowManager.getStudentsWithOverdueBorrows();
-
-        System.out.println("\n=== Students with Overdue Books ===");
-        if (students.isEmpty()) {
-            System.out.println("No students have overdue books.");
-            return;
-        }
-
-        System.out.println("Total students with overdue books: " + students.size());
-        System.out.println("\nList of students:");
-        students.forEach(student -> {
-            List<BorrowRecord> overdueBooks = borrowManager.getStudentBorrows(student).stream()
-                    .filter(BorrowRecord::isOverdue)
-                    .collect(Collectors.toList());
-
-            System.out.println("Student: " + student + " - Overdue books: " + overdueBooks.size());
-            overdueBooks.forEach(record ->
-                    System.out.println("  - " + record.getBookIsbn() + " (Due: " + record.getDueDate() + ")")
-            );
-        });
-    }
-
-    public StudentManager getStudentManager() { return studentManager; }
-    public EmployeePerformanceManager getPerformanceManager() {
-        return performanceManager;
-    }
-
-    public BookManager getBookManager() { return bookManager; }
-    public BorrowManager getBorrowManager() { return borrowManager; }
-    public BorrowRequestManager getBorrowRequestManager() { return borrowRequestManager; }
-    public EmployeeManager getEmployeeManager() { return employeeManager; }
-    public StatisticsManager getStatisticsManager() { return statisticsManager; }
-
-    public void displayPendingRequests() {
-        if (currentEmployee == null) {
-            System.out.println("Only employees can view pending requests.");
-            return;
-        }
-        borrowRequestManager.displayPendingRequests();
-    }
-
-    public void displayPendingRequestsForToday() {
-        if (currentEmployee == null) {
-            System.out.println("Only employees can view pending requests.");
-            return;
-        }
-        borrowRequestManager.displayPendingRequestsForToday();
-    }
-
-    public void approveBorrowRequest() {
-        if (currentEmployee == null) {
-            System.out.println("Only employees can approve requests.");
-            return;
-        }
-
-        Scanner scanner = new Scanner(System.in);
-        borrowRequestManager.displayPendingRequestsForToday();
-
-        System.out.print("\nEnter student username to approve: ");
-        String username = scanner.nextLine();
-
-        System.out.print("Enter book ISBN to approve: ");
-        String isbn = scanner.nextLine();
-
-        if (borrowRequestManager.approveRequest(username, isbn)) {
-            System.out.println("Borrow request approved successfully!");
-            bookManager.borrowBook(isbn);
-            borrowManager.borrowBook(username, isbn, 14);
-            recordBorrowRequestApproved();
-            System.out.println("Book has been marked as borrowed. Student can now pick up the book.");
-        } else {
-            System.out.println("Failed to approve request. Request not found or already processed.");
-        }
-    }
-
-    public void rejectBorrowRequest() {
-        if (currentEmployee == null) {
-            System.out.println("Only employees can reject requests.");
-            return;
-        }
-
-        Scanner scanner = new Scanner(System.in);
-        borrowRequestManager.displayPendingRequestsForToday();
-
-        System.out.print("\nEnter student username to reject: ");
-        String username = scanner.nextLine();
-
-        System.out.print("Enter book ISBN to reject: ");
-        String isbn = scanner.nextLine();
-
-        System.out.print("Enter rejection reason: ");
-        String reason = scanner.nextLine();
-
-        if (borrowRequestManager.rejectRequest(username, isbn, reason)) {
-            System.out.println("Borrow request rejected successfully!");
-            recordBorrowRequestRejected();
-        } else {
-            System.out.println("Failed to reject request. Request not found or already processed.");
-        }
+        borrowRequestManager.createBorrowRequest(student.getUsername(), isbn, startDate, endDate);
     }
 
     public void viewMyBorrowRequests(Student student) {
@@ -501,184 +135,6 @@ public class LibrarySystem {
         requests.forEach(System.out::println);
     }
 
-    public int getStudentCount() {
-        return this.studentManager.getStudentCount();
-    }
-
-    public int getEmployeeCount() {
-        return this.employeeManager.getEmployeeCount();
-    }
-
-    public void displayStudentCount() {
-        int count = getStudentCount();
-        System.out.println("\n--- Registered Students Count ---");
-        System.out.println("Total registered students: " + count);
-    }
-
-    public void displayStatistics() {
-        statisticsManager.displayStatistics();
-    }
-
-    public void searchBooksAdvanced() {
-        if (currentEmployee == null) {
-            System.out.println("Only employees can use advanced search.");
-            return;
-        }
-
-        Scanner scanner = new Scanner(System.in);
-        bookManager.searchBooksFromInput(scanner);
-    }
-
-    public void editBook() {
-        if (currentEmployee == null) {
-            System.out.println("Only employees can edit books.");
-            return;
-        }
-
-        Scanner scanner = new Scanner(System.in);
-        System.out.println("\n--- Edit Book Information ---");
-
-        System.out.print("Enter ISBN of the book to edit: ");
-        String isbn = scanner.nextLine();
-
-        bookManager.editBookFromInput(scanner, isbn);
-        recordBookEdited();
-    }
-
-    public void addNewBook() {
-        if (currentEmployee == null) {
-            System.out.println("Only employees can add books.");
-            return;
-        }
-
-        Scanner scanner = new Scanner(System.in);
-        Book newBook = bookManager.createBookFromInput(scanner);
-
-        if (newBook != null) {
-            bookManager.addNewBook(newBook);
-            recordBookAdded();
-        }
-    }
-
-    public void registerStudent(String name, String studentId, String username, String password) {
-        studentManager.registerStudent(name, studentId, username, password);
-    }
-
-    public Student authenticateStudent(String username, String password) {
-        return studentManager.authenticateStudent(username, password);
-    }
-
-    public Employee authenticateEmployee(String username, String password) {
-        return employeeManager.authenticateEmployee(username, password);
-    }
-
-    public boolean changeEmployeePassword(String username, String currentPassword, String newPassword) {
-        return employeeManager.changePassword(username, currentPassword, newPassword);
-    }
-
-    public void registerEmployee(String name, String employeeId, String username, String password, String role) {
-        if (currentEmployee != null && currentEmployee.isManager()) {
-            employeeManager.registerEmployee(name, employeeId, username, password, role);
-        } else {
-            System.out.println("Only managers can register new employees.");
-        }
-    }
-
-    public void displayAllEmployees() {
-        if (currentEmployee != null && currentEmployee.isManager()) {
-            employeeManager.displayAllEmployees();
-        } else {
-            System.out.println("Only managers can view employee list.");
-        }
-    }
-
-    public void editStudentInformation(Student student) {
-        Scanner scanner = new Scanner(System.in);
-        System.out.println("\n--- Edit Student Information ---");
-
-        System.out.print("New name (current: " + student.getName() + "): ");
-        String newName = scanner.nextLine();
-        if (!newName.isEmpty()) {
-            System.out.println("Name change functionality not fully implemented.");
-        }
-
-        System.out.print("New password: ");
-        String newPassword = scanner.nextLine();
-        if (!newPassword.isEmpty()) {
-            System.out.println("Password change functionality not fully implemented.");
-        }
-
-        System.out.println("Information updated successfully.");
-    }
-
-    public void borrowBook(Student student) {
-        Scanner scanner = new Scanner(System.in);
-        System.out.println("\n--- Borrow a Book ---");
-
-        bookManager.displayAvailableBooks();
-
-        System.out.print("Enter ISBN of the book you want to borrow: ");
-        String isbn = scanner.nextLine();
-
-        Book book = bookManager.findBookByIsbn(isbn);
-        if (book == null) {
-            System.out.println("Invalid ISBN.");
-            return;
-        }
-
-        if (!book.isAvailable()) {
-            System.out.println("Book is not available.");
-            return;
-        }
-
-        System.out.print("Enter desired borrow date (YYYY-MM-DD) or press Enter for today: ");
-        String dateInput = scanner.nextLine();
-        LocalDate desiredDate = LocalDate.now();
-
-        if (!dateInput.isEmpty()) {
-            try {
-                desiredDate = LocalDate.parse(dateInput);
-                if (desiredDate.isBefore(LocalDate.now())) {
-                    System.out.println("Cannot request  a date in the past.");
-                    return;
-                }
-            } catch (Exception e) {
-                System.out.println("Invalid date format. Please use YYYY-MM-DD.");
-                return;
-            }
-        }
-
-        createBorrowRequest(student, isbn, desiredDate);
-    }
-
-    public void returnBook(Student student) {
-        Scanner scanner = new Scanner(System.in);
-        System.out.println("\n--- Return a Book ---");
-
-        List<BorrowRecord> activeBorrows = borrowManager.getActiveBorrows(student.getUsername());
-        if (activeBorrows.isEmpty()) {
-            System.out.println("You have no active borrows.");
-            return;
-        }
-
-        System.out.println("\nYour Active Borrows:");
-        activeBorrows.forEach(System.out::println);
-
-        System.out.print("Enter ISBN of the book you want to return: ");
-        String isbn = scanner.nextLine();
-
-        if (borrowManager.returnBook(student.getUsername(), isbn)) {
-            bookManager.returnBook(isbn);
-            System.out.println("Book returned successfully!");
-        } else {
-            System.out.println("Invalid ISBN or you don't have this book borrowed.");
-        }
-    }
-
-    public void displayAvailableBooks() {
-        bookManager.displayAvailableBooks();
-    }
-
     public void viewMyBorrows(Student student) {
         System.out.println("\n--- My Borrow History ---");
         List<BorrowRecord> borrows = borrowManager.getStudentBorrows(student.getUsername());
@@ -691,31 +147,370 @@ public class LibrarySystem {
         borrows.forEach(System.out::println);
     }
 
-    public void searchBooksByTitle() {
-        Scanner scanner = new Scanner(System.in);
-        System.out.println("\n--- Search Books by Title ---");
+    public void editStudentInformation(Student student) {
+        System.out.println("\n--- Edit My Information ---");
+        System.out.print("New name (current: " + student.getName() + "): ");
+        String newName = scanner.nextLine();
+        System.out.print("New password (press Enter to keep the current one): ");
+        String newPassword = scanner.nextLine();
 
-        System.out.print("Enter book title to search: ");
-        String title = scanner.nextLine();
+        if (studentManager.updateStudentInfo(student.getUsername(), newName, newPassword)) {
+            System.out.println("Information updated successfully.");
+        } else {
+            System.out.println("Nothing to update.");
+        }
+    }
 
-        if (title.isEmpty()) {
-            System.out.println("Please enter a title to search.");
+    // ---------- Employee ----------
+
+    public void addNewBook() {
+        if (!isEmployeeLoggedIn()) {
             return;
         }
 
-        List<Book> results = bookManager.searchBooksByTitle(title);
-        bookManager.displaySearchResults(results);
+        Book newBook = bookManager.createBookFromInput(scanner);
+        if (newBook != null) {
+            bookManager.addNewBook(newBook);
+            recordBookAdded();
+        }
     }
+
+    public void editBook() {
+        if (!isEmployeeLoggedIn()) {
+            return;
+        }
+
+        System.out.println("\n--- Edit Book Information ---");
+        System.out.print("Enter ISBN of the book to edit: ");
+        String isbn = scanner.nextLine();
+
+        if (bookManager.editBookFromInput(scanner, isbn)) {
+            recordBookEdited();
+        }
+    }
+
+    public void searchBooksFromInput() {
+        if (!isEmployeeLoggedIn()) {
+            return;
+        }
+
+        bookManager.searchBooksFromInput(scanner);
+    }
+
+    public void displayAllBooks() {
+        bookManager.displayAllBooks();
+    }
+
+    public void displayPendingApprovableRequests() {
+        if (!isEmployeeLoggedIn()) {
+            return;
+        }
+
+        borrowRequestManager.displayPendingApprovableRequests();
+    }
+
+    public void approveBorrowRequest() {
+        if (!isEmployeeLoggedIn()) {
+            return;
+        }
+
+        System.out.println("\n--- Approve Borrow Request ---");
+        borrowRequestManager.displayPendingApprovableRequests();
+
+        System.out.print("\nEnter student username to approve: ");
+        String username = scanner.nextLine();
+        System.out.print("Enter book ISBN to approve: ");
+        String isbn = scanner.nextLine();
+
+        Student student = studentManager.findStudentByUsername(username);
+        if (student == null) {
+            System.out.println("Student not found.");
+            return;
+        }
+        if (!student.isActive()) {
+            System.out.println("Student is inactive and cannot borrow books.");
+            return;
+        }
+
+        BorrowRequest request = borrowRequestManager.findPendingRequest(username, isbn);
+        if (request == null) {
+            System.out.println("No pending borrow request found for this student and book.");
+            return;
+        }
+        if (!request.isApprovableDate()) {
+            System.out.println("Only requests whose start date is today or yesterday can be approved.");
+            return;
+        }
+
+        Book book = bookManager.findBookByIsbn(isbn);
+        if (book == null) {
+            System.out.println("Invalid ISBN.");
+            return;
+        }
+        if (!book.isAvailable()) {
+            System.out.println("Book is not available.");
+            return;
+        }
+
+        borrowRequestManager.approveRequest(request);
+        bookManager.borrowBook(isbn);
+        borrowManager.createBorrow(username, isbn, request.getDesiredBorrowDate(), request.getDesiredEndDate());
+        recordBorrowRequestApproved();
+        System.out.println("Borrow request approved. The book can now be lent to the student.");
+    }
+
+    public void rejectBorrowRequest() {
+        if (!isEmployeeLoggedIn()) {
+            return;
+        }
+
+        System.out.println("\n--- Reject Borrow Request ---");
+        borrowRequestManager.displayPendingRequests();
+
+        System.out.print("\nEnter student username to reject: ");
+        String username = scanner.nextLine();
+        System.out.print("Enter book ISBN to reject: ");
+        String isbn = scanner.nextLine();
+        System.out.print("Enter rejection reason: ");
+        String reason = scanner.nextLine();
+
+        BorrowRequest request = borrowRequestManager.findPendingRequest(username, isbn);
+        if (request == null) {
+            System.out.println("No pending borrow request found for this student and book.");
+            return;
+        }
+
+        borrowRequestManager.rejectRequest(request, reason);
+        recordBorrowRequestRejected();
+        System.out.println("Borrow request rejected successfully!");
+    }
+
+    public void lendBookToStudent() {
+        if (!isEmployeeLoggedIn()) {
+            return;
+        }
+
+        System.out.println("\n--- Lend Book to Student ---");
+        borrowManager.displayReadyForPickupBooks();
+
+        System.out.print("Enter student username: ");
+        String username = scanner.nextLine();
+        System.out.print("Enter book ISBN: ");
+        String isbn = scanner.nextLine();
+
+        if (borrowManager.markBookAsPickedUp(username, isbn)) {
+            recordBookBorrowed();
+            System.out.println("Book handed to the student. Pickup time recorded.");
+            BorrowRecord record = borrowManager.findActiveBorrow(username, isbn);
+            if (record != null) {
+                System.out.println("Due date: " + record.getDueDate());
+            }
+        } else {
+            System.out.println("No approved book ready for pickup found for this student and ISBN.");
+        }
+    }
+
+    public void receiveReturnedBook() {
+        if (!isEmployeeLoggedIn()) {
+            return;
+        }
+
+        System.out.println("\n--- Receive Returned Book ---");
+        List<BorrowRecord> borrowedBooks = borrowManager.getActiveBorrows();
+        if (borrowedBooks.isEmpty()) {
+            System.out.println("No books are currently borrowed.");
+            return;
+        }
+
+        System.out.println("\nCurrently borrowed books:");
+        borrowedBooks.forEach(System.out::println);
+
+        System.out.print("Enter student username: ");
+        String username = scanner.nextLine();
+        System.out.print("Enter book ISBN: ");
+        String isbn = scanner.nextLine();
+
+        if (borrowManager.returnBook(username, isbn)) {
+            bookManager.returnBook(isbn);
+            recordBookReturned();
+            System.out.println("Book received back. Return time recorded.");
+        } else {
+            System.out.println("No borrowed book found for this student and ISBN (or it was never picked up).");
+        }
+    }
+
+    public void viewStudentBorrowReport() {
+        if (!isEmployeeLoggedIn()) {
+            return;
+        }
+
+        System.out.println("\n=== Student Borrow Report ===");
+        System.out.print("Enter student username: ");
+        String username = scanner.nextLine();
+
+        Student student = studentManager.findStudentByUsername(username);
+        if (student == null) {
+            System.out.println("Student not found.");
+            return;
+        }
+
+        borrowManager.generateStudentReport(username).displayReport();
+    }
+
+    public void toggleStudentActivation() {
+        if (!isEmployeeLoggedIn()) {
+            return;
+        }
+
+        System.out.println("\n--- Activate/Deactivate Student ---");
+        System.out.print("Enter student username: ");
+        String username = scanner.nextLine();
+
+        Student student = studentManager.findStudentByUsername(username);
+        if (student == null) {
+            System.out.println("Student not found.");
+            return;
+        }
+
+        if (studentManager.toggleStudentStatus(username)) {
+            System.out.println("Student status updated successfully. Student is now " +
+                    (student.isActive() ? "activated" : "deactivated") + ".");
+        } else {
+            System.out.println("Failed to update student status.");
+        }
+    }
+
+    // ---------- Manager ----------
+
+    public void registerEmployee(String name, String employeeId, String username, String password, String role) {
+        if (!isManagerLoggedIn()) {
+            return;
+        }
+
+        employeeManager.registerEmployee(name, employeeId, username, password, role);
+    }
+
+    public void displayAllEmployees() {
+        if (!isManagerLoggedIn()) {
+            return;
+        }
+
+        employeeManager.displayAllEmployees();
+    }
+
+    public void displayAllEmployeesPerformance() {
+        if (!isManagerLoggedIn()) {
+            return;
+        }
+
+        performanceManager.displayAllEmployeesPerformance();
+    }
+
+    public void viewBorrowStatistics() {
+        if (!isManagerLoggedIn()) {
+            return;
+        }
+
+        BorrowStatistics statistics = new BorrowStatistics(
+                borrowManager.getAllBorrows(), borrowRequestManager.getAllRequests());
+        statistics.displayStatistics();
+    }
+
+    public void displayStudentStatisticsAndTopLate() {
+        if (!isManagerLoggedIn()) {
+            return;
+        }
+
+        List<BorrowRecord> borrows = borrowManager.getAllBorrows();
+        studentManager.generateStudentStatistics(borrows).displayStatistics();
+        studentManager.displayStudentsWithMostLate(10, borrows);
+    }
+
+    public void displayMyPerformance() {
+        if (!isEmployeeLoggedIn()) {
+            return;
+        }
+
+        performanceManager.displayEmployeePerformance(currentEmployee.getUsername());
+    }
+
+    // ---------- Authentication ----------
+
+    public Employee authenticateEmployee(String username, String password) {
+        return employeeManager.authenticateEmployee(username, password);
+    }
+
+    public boolean changeEmployeePassword(String username, String currentPassword, String newPassword) {
+        return employeeManager.changePassword(username, currentPassword, newPassword);
+    }
+
+    public void setCurrentEmployee(Employee employee) {
+        this.currentEmployee = employee;
+    }
+
+    // ---------- Performance recording ----------
+
+    private void recordBookAdded() {
+        if (currentEmployee != null) {
+            performanceManager.recordBookAdded(currentEmployee.getUsername());
+        }
+    }
+
+    private void recordBookEdited() {
+        if (currentEmployee != null) {
+            performanceManager.recordBookEdited(currentEmployee.getUsername());
+        }
+    }
+
+    private void recordBookBorrowed() {
+        if (currentEmployee != null) {
+            performanceManager.recordBookBorrowed(currentEmployee.getUsername());
+        }
+    }
+
+    private void recordBookReturned() {
+        if (currentEmployee != null) {
+            performanceManager.recordBookReturned(currentEmployee.getUsername());
+        }
+    }
+
+    private void recordBorrowRequestApproved() {
+        if (currentEmployee != null) {
+            performanceManager.recordBorrowRequestApproved(currentEmployee.getUsername());
+        }
+    }
+
+    private void recordBorrowRequestRejected() {
+        if (currentEmployee != null) {
+            performanceManager.recordBorrowRequestRejected(currentEmployee.getUsername());
+        }
+    }
+
+    // ---------- Guards ----------
+
+    private boolean isEmployeeLoggedIn() {
+        if (currentEmployee == null) {
+            System.out.println("Only employees can perform this action.");
+            return false;
+        }
+        return true;
+    }
+
+    private boolean isManagerLoggedIn() {
+        if (currentEmployee == null || !currentEmployee.isManager()) {
+            System.out.println("Only managers can perform this action.");
+            return false;
+        }
+        return true;
+    }
+
+    // ---------- Entry point ----------
 
     public void start() {
         menuHandler.displayMainMenu();
     }
 
     public static void main(String[] args) {
-        LibrarySystem system = new LibrarySystem();
-        system.start();
+        new LibrarySystem().start();
     }
-
-    public Employee getCurrentEmployee() { return currentEmployee; }
-    public void setCurrentEmployee(Employee employee) { this.currentEmployee = employee; }
 }

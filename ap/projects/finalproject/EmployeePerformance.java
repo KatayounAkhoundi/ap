@@ -74,8 +74,8 @@ public class EmployeePerformance implements Serializable {
         return "Employee: " + employeeUsername +
                 " | Books Added: " + booksAdded +
                 " | Books Edited: " + booksEdited +
-                " | Books Borrowed: " + booksBorrowed +
-                " | Books Returned: " + booksReturned +
+                " | Books Lent: " + booksBorrowed +
+                " | Books Received Back: " + booksReturned +
                 " | Requests Approved: " + borrowRequestsApproved +
                 " | Requests Rejected: " + borrowRequestsRejected +
                 " | Last Activity: " + lastActivityDate +
@@ -87,8 +87,8 @@ public class EmployeePerformance implements Serializable {
         System.out.println("Employee: " + employeeUsername);
         System.out.println("Books Added: " + booksAdded);
         System.out.println("Books Edited: " + booksEdited);
-        System.out.println("Books Borrowed Processed: " + booksBorrowed);
-        System.out.println("Books Returned Processed: " + booksReturned);
+        System.out.println("Books Lent: " + booksBorrowed);
+        System.out.println("Books Received Back: " + booksReturned);
         System.out.println("Borrow Requests Approved: " + borrowRequestsApproved);
         System.out.println("Borrow Requests Rejected: " + borrowRequestsRejected);
         System.out.println("Total Activities: " + getTotalActivities());

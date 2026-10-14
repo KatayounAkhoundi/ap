@@ -29,11 +29,11 @@ public class Employee implements Serializable {
     }
 
     public boolean isManager() {
-        return "manager ".equalsIgnoreCase(role);
+        return "manager".equalsIgnoreCase(role);
     }
 
     public boolean isStaff() {
-        return "staff ".equalsIgnoreCase(role);
+        return "staff".equalsIgnoreCase(role);
     }
 
     @Override

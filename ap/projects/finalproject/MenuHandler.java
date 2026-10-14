@@ -1,58 +1,45 @@
 package ap.projects.finalproject;
 
-import java.util.Scanner;
+import java.util.ArrayList;
+import java.util.List;
 
 public class MenuHandler {
-    private Scanner scanner ;
-    private LibrarySystem librarySystem;
+    private final LibrarySystem librarySystem;
     private Student currentUser;
     private Employee currentEmployee;
 
     public MenuHandler(LibrarySystem librarySystem) {
-        this.scanner = new Scanner(System.in);
         this.librarySystem = librarySystem;
         this.currentUser = null;
         this.currentEmployee = null;
     }
 
+    private static class MenuOption {
+        private final String label;
+        private final Runnable action;
+
+        private MenuOption(String label, Runnable action) {
+            this.label = label;
+            this.action = action;
+        }
+    }
+
     public void displayMainMenu() {
+        List<MenuOption> options = new ArrayList<>();
+        options.add(new MenuOption("Student Login", this::handleStudentLogin));
+        options.add(new MenuOption("Employee Login", this::handleEmployeeLogin));
+        options.add(new MenuOption("View Library Statistics", librarySystem::displayStatistics));
+        options.add(new MenuOption("Search Books by Title", librarySystem::searchBooksByTitle));
+        options.add(new MenuOption("Student Registration", this::handleStudentRegistration));
+        options.add(new MenuOption("Exit", () -> System.out.println("Exiting system. Goodbye!")));
+
         while (true) {
             System.out.println("\n=== University Library Management System ===");
-            System.out.println("1. Student Login");
-            System.out.println("2. Employee Login");
-            System.out.println("3. View Statistics");
-            System.out.println("4. Search Books by Title");
-            System.out.println("5. View Available Books");
-            System.out.println("6.Student Registeration ");
-            System.out.println("7. Exit");
-            System.out.print("Please enter your choice: ");
-
-            int choice = getIntInput(1, 6);
-
-            switch (choice) {
-                case 1:
-                    handleStudentLogin();
-                    break;
-                case 2:
-                    handleEmployeeLogin();
-                    break;
-                case 3:
-                    librarySystem.displayStatistics();
-                    break;
-                case 4:
-                    librarySystem.searchBooksByTitle();
-                    break;
-                case 5:
-                    librarySystem.displayAvailableBooks();
-                    break;
-                case  6:
-                    handleStudentRegistration();
-                    break;
-                case 7:
-                    System.out.println("Exiting system. Goodbye!");
-                    return;
-                default:
-                    System.out.println("Invalid option! Please try again.");
+            printOptions(options);
+            int choice = getIntInput(1, options.size());
+            options.get(choice - 1).action.run();
+            if (choice == options.size()) {
+                return;
             }
             System.out.println("___________________________");
         }
@@ -60,15 +47,10 @@ public class MenuHandler {
 
     private void handleStudentLogin() {
         System.out.println("\n--- Student Login ---");
-
-        System.out.print("Username: ");
-        String username = scanner.nextLine();
-
-        System.out.print("Password: ");
-        String password = scanner.nextLine();
+        String username = readLine("Username: ");
+        String password = readLine("Password: ");
 
         currentUser = librarySystem.authenticateStudent(username, password);
-
         if (currentUser != null) {
             System.out.println("Login successful! Welcome, " + currentUser.getName());
             displayLoggedInStudentMenu();
@@ -76,34 +58,23 @@ public class MenuHandler {
             System.out.println("Invalid username or password. Please try again.");
         }
     }
+
     private void handleStudentRegistration() {
         System.out.println("\n--- New Student Registration ---");
-
-        System.out.print("Student name: ");
-        String name = scanner.nextLine();
-
-        System.out.print("Student ID: ");
-        String studentId = scanner.nextLine();
-
-        System.out.print("Username: ");
-        String username = scanner.nextLine();
-
-        System.out.print("Password: ");
-        String password = scanner.nextLine();
+        String name = readLine("Student name: ");
+        String studentId = readLine("Student ID: ");
+        String username = readLine("Username: ");
+        String password = readLine("Password: ");
 
         librarySystem.registerStudent(name, studentId, username, password);
     }
+
     private void handleEmployeeLogin() {
         System.out.println("\n--- Employee Login ---");
-
-        System.out.print("Username: ");
-        String username = scanner.nextLine();
-
-        System.out.print("Password: ");
-        String password = scanner.nextLine();
+        String username = readLine("Username: ");
+        String password = readLine("Password: ");
 
         currentEmployee = librarySystem.authenticateEmployee(username, password);
-
         if (currentEmployee != null) {
             System.out.println("Login successful! Welcome, " + currentEmployee.getName());
             librarySystem.setCurrentEmployee(currentEmployee);
@@ -114,235 +85,83 @@ public class MenuHandler {
     }
 
     private void displayLoggedInStudentMenu() {
+        List<MenuOption> options = new ArrayList<>();
+        options.add(new MenuOption("View My Information", () -> {
+            System.out.println("\n--- My Information ---");
+            System.out.println(currentUser);
+        }));
+        options.add(new MenuOption("Edit My Information", () -> librarySystem.editStudentInformation(currentUser)));
+        options.add(new MenuOption("Search Books", librarySystem::searchBooksForStudent));
+        options.add(new MenuOption("View Available Books", librarySystem::displayAvailableBooks));
+        options.add(new MenuOption("Request to Borrow a Book", () -> librarySystem.requestBorrowBook(currentUser)));
+        options.add(new MenuOption("View My Borrow Requests", () -> librarySystem.viewMyBorrowRequests(currentUser)));
+        options.add(new MenuOption("View My Borrow History", () -> librarySystem.viewMyBorrows(currentUser)));
+        options.add(new MenuOption("Logout", () -> currentUser = null));
+
         while (currentUser != null) {
             System.out.println("\n=== Student Dashboard ===");
-            System.out.println("1. View My Information");
-            System.out.println("2. Edit My Information");
-            System.out.println("3. Request to Borrow a Book");
-            System.out.println("4. Return a Book");
-            System.out.println("5. View My Borrow History");
-            System.out.println("6. View My Borrow Requests");
-            System.out.println("7. View Available Books");
-            System.out.println("8. Search Books by Title");
-            System.out.println("9. View Statistics");
-            System.out.println("10. Logout");
-            System.out.print("Please enter your choice: ");
-
-            int choice = getIntInput(1, 10);
-
-            switch (choice) {
-                case 1:
-                    System.out.println("\n--- My Information ---");
-                    System.out.println(currentUser);
-                    break;
-                case 2:
-                    librarySystem.editStudentInformation(currentUser);
-                    break;
-                case 3:
-                    librarySystem.borrowBook(currentUser);
-                    break;
-                case 4:
-                    librarySystem.returnBook(currentUser);
-                    break;
-                case 5:
-                    librarySystem.viewMyBorrows(currentUser);
-                    break;
-                case 6:
-                    librarySystem.viewMyBorrowRequests(currentUser);
-                    break;
-                case 7:
-                    librarySystem.displayAvailableBooks();
-                    break;
-                case 8:
-                    librarySystem.searchBooksByTitle();
-                    break;
-                case 9:
-                    librarySystem.displayStatistics();
-                    break;
-                case 10:
-                    currentUser = null;
-                    System.out.println("Logged out successfully.");
-                    return;
-                default:
-                    System.out.println("Invalid option! Please try again.");
-            }
+            printOptions(options);
+            int choice = getIntInput(1, options.size());
+            options.get(choice - 1).action.run();
+            System.out.println("___________________________");
         }
+        System.out.println("Logged out successfully.");
     }
 
     private void displayLoggedInEmployeeMenu() {
+        List<MenuOption> options = buildEmployeeOptions();
         while (currentEmployee != null) {
-            System.out.println("\n=== Employee Dashboard ===");
-            System.out.println("1. View Statistics");
-            System.out.println("2. Search Books by Title");
-            System.out.println("3. Advanced Book Search");
-            System.out.println("4. View Available Books");
-            System.out.println("5. View All Books");
-            System.out.println("6. Add New Book");
-            System.out.println("7. Edit Book Information");
-            System.out.println("8. View Pending Borrow Requests");
-            System.out.println("9. Approve Borrow Requests");
-            System.out.println("10. Reject Borrow Requests");
-            System.out.println("11. View Student Borrow Report");
-            System.out.println("12. View Borrow Statistics");
-            System.out.println("13. View Students with Overdue Books");
-            System.out.println("14. Change Password");
-            System.out.println("15.view my performance");
-
-            if (currentEmployee.isManager()) {
-                System.out.println("1. Register New Employee");
-                System.out.println("2. View All Employees");
-                System.out.println("3. View All Students");
-                System.out.println("4. Logout");
-                System.out.println("5.view all employee performance:");
-                System.out.print("Please enter your choice: ");
-
-                int choice = getIntInput(1, 18);
-                handleManagerChoice(choice);
-            } else {
-                System.out.println("6. Add New Book");
-                System.out.println("7. Edit Book Information");
-                System.out.println("8. View Pending Borrow Requests");
-                System.out.println("9. Approve Borrow Requests");
-                System.out.println("10. Reject Borrow Requests");
-                System.out.println("11. Mark Book as Picked Up");
-                System.out.println("12. View My Performance");
-                System.out.println("1. Logout");
-                System.out.print("Please enter your choice: ");
-
-                int choice = getIntInput(1, 15);
-                handleStaffChoice(choice);
-            }
+            System.out.println("\n=== Employee Dashboard" +
+                    (currentEmployee.isManager() ? " (Manager)" : "") + " ===");
+            printOptions(options);
+            int choice = getIntInput(1, options.size());
+            options.get(choice - 1).action.run();
+            System.out.println("___________________________");
         }
+        System.out.println("Logged out successfully.");
     }
 
-    private void handleManagerChoice(int choice) {
-        switch (choice) {
-            case 1:
-                librarySystem.displayStatistics();
-                break;
-            case 2:
-                librarySystem.searchBooksByTitle();
-                break;
-            case 3:
-                librarySystem.searchBooksAdvanced();
-                break;
-            case 4:
-                librarySystem.displayAvailableBooks();
-                break;
-            case 5:
-                librarySystem.getBookManager().displayAllBooks();
-                break;
-            case 6:
-                librarySystem.addNewBook();
-                break;
-            case 7:
-                librarySystem.editBook();
-                break;
-            case 8:
-                librarySystem.displayPendingRequestsForToday();
-                break;
-            case 9:
-                librarySystem.approveBorrowRequest();
-                break;
-            case 10:
-                librarySystem.rejectBorrowRequest();
-                break;
-            case 11:
-                librarySystem.viewStudentBorrowReport();
-                break;
-            case 12:
-                librarySystem.viewBorrowStatistics();
-                break;
-            case 13:
-                librarySystem.viewStudentsWithOverdueBorrows();
-                break;
-            case 14:
-                handleChangePassword();
-                break;
-            case 15:
-                handleEmployeeRegistration();
-                break;
-            case 16:
-                librarySystem.displayAllEmployees();
-                break;
-            case 17:
-                librarySystem.getStudentManager().displayStudents();
-                break;
-            case 18:
-                currentEmployee = null;
-                librarySystem.setCurrentEmployee(null);
-                System.out.println("Logged out successfully.");
-                return;
-            default:
-                System.out.println("Invalid option! Please try again.");
+    private List<MenuOption> buildEmployeeOptions() {
+        List<MenuOption> options = new ArrayList<>();
+        options.add(new MenuOption("Add New Book", librarySystem::addNewBook));
+        options.add(new MenuOption("Search Books", librarySystem::searchBooksFromInput));
+        options.add(new MenuOption("View Available Books", librarySystem::displayAvailableBooks));
+        options.add(new MenuOption("View All Books", librarySystem::displayAllBooks));
+        options.add(new MenuOption("Edit Book Information", librarySystem::editBook));
+        options.add(new MenuOption("View Pending Borrow Requests (Start Date: Today/Yesterday)",
+                librarySystem::displayPendingApprovableRequests));
+        options.add(new MenuOption("Approve Borrow Request", librarySystem::approveBorrowRequest));
+        options.add(new MenuOption("Reject Borrow Request", librarySystem::rejectBorrowRequest));
+        options.add(new MenuOption("Lend Book to Student (Record Pickup)", librarySystem::lendBookToStudent));
+        options.add(new MenuOption("Receive Returned Book (Record Return Time)", librarySystem::receiveReturnedBook));
+        options.add(new MenuOption("Student Borrow Report", librarySystem::viewStudentBorrowReport));
+        options.add(new MenuOption("Activate/Deactivate Student", librarySystem::toggleStudentActivation));
+        options.add(new MenuOption("View My Performance", librarySystem::displayMyPerformance));
+        options.add(new MenuOption("Change Password", this::handleChangePassword));
+
+        if (currentEmployee.isManager()) {
+            options.add(new MenuOption("Register New Employee", this::handleEmployeeRegistration));
+            options.add(new MenuOption("View All Employees", librarySystem::displayAllEmployees));
+            options.add(new MenuOption("View All Employees Performance", librarySystem::displayAllEmployeesPerformance));
+            options.add(new MenuOption("Borrow Statistics", librarySystem::viewBorrowStatistics));
+            options.add(new MenuOption("Student Statistics and Top 10 Late Students",
+                    librarySystem::displayStudentStatisticsAndTopLate));
         }
+
+        options.add(new MenuOption("Logout", this::logoutEmployee));
+        return options;
     }
 
-    private void handleStaffChoice(int choice) {
-        switch (choice) {
-            case 1:
-                librarySystem.displayStatistics();
-                break;
-            case 2:
-                librarySystem.searchBooksByTitle();
-                break;
-            case 3:
-                librarySystem.searchBooksAdvanced();
-                break;
-            case 4:
-                librarySystem.displayAvailableBooks();
-                break;
-            case 5:
-                librarySystem.getBookManager().displayAllBooks();
-                break;
-            case 6:
-                librarySystem.addNewBook();
-                break;
-            case 7:
-                librarySystem.editBook();
-                break;
-            case 8:
-                librarySystem.displayPendingRequestsForToday();
-                break;
-            case 9:
-                librarySystem.approveBorrowRequest();
-                break;
-            case 10:
-                librarySystem.rejectBorrowRequest();
-                break;
-            case 11:
-                librarySystem.viewStudentBorrowReport();
-                break;
-            case 12:
-                librarySystem.viewBorrowStatistics();
-                break;
-            case 13:
-                librarySystem.viewStudentsWithOverdueBorrows();
-                break;
-            case 14:
-                handleChangePassword();
-                break;
-            case 15:
-                currentEmployee = null;
-                librarySystem.setCurrentEmployee(null);
-                System.out.println("Logged out successfully.");
-                return;
-            default:
-                System.out.println("Invalid option! Please try again.");
-        }
+    private void logoutEmployee() {
+        currentEmployee = null;
+        librarySystem.setCurrentEmployee(null);
     }
 
     private void handleChangePassword() {
         System.out.println("\n--- Change Password ---");
-
-        System.out.print("Current password: ");
-        String currentPassword = scanner.nextLine();
-
-        System.out.print("New password: ");
-        String newPassword = scanner.nextLine();
-
-        System.out.print("Confirm new password: ");
-        String confirmPassword = scanner.nextLine();
+        String currentPassword = readLine("Current password: ");
+        String newPassword = readLine("New password: ");
+        String confirmPassword = readLine("Confirm new password: ");
 
         if (!newPassword.equals(confirmPassword)) {
             System.out.println("New passwords do not match.");
@@ -358,21 +177,11 @@ public class MenuHandler {
 
     private void handleEmployeeRegistration() {
         System.out.println("\n--- New Employee Registration ---");
-
-        System.out.print("Employee name: ");
-        String name = scanner.nextLine();
-
-        System.out.print("Employee ID: ");
-        String employeeId = scanner.nextLine();
-
-        System.out.print("Username: ");
-        String username = scanner.nextLine();
-
-        System.out.print("Password: ");
-        String password = scanner.nextLine();
-
-        System.out.print("Role (manager/staff): ");
-        String role = scanner.nextLine();
+        String name = readLine("Employee name: ");
+        String employeeId = readLine("Employee ID: ");
+        String username = readLine("Username: ");
+        String password = readLine("Password: ");
+        String role = readLine("Role (manager/staff): ");
 
         if (!role.equalsIgnoreCase("manager") && !role.equalsIgnoreCase("staff")) {
             System.out.println("Invalid role. Please enter 'manager' or 'staff'.");
@@ -382,10 +191,22 @@ public class MenuHandler {
         librarySystem.registerEmployee(name, employeeId, username, password, role.toLowerCase());
     }
 
+    private String readLine(String prompt) {
+        System.out.print(prompt);
+        return librarySystem.getScanner().nextLine();
+    }
+
+    private void printOptions(List<MenuOption> options) {
+        for (int i = 0; i < options.size(); i++) {
+            System.out.println((i + 1) + ". " + options.get(i).label);
+        }
+        System.out.print("Please enter your choice: ");
+    }
+
     private int getIntInput(int min, int max) {
         while (true) {
             try {
-                int input = Integer.parseInt(scanner.nextLine());
+                int input = Integer.parseInt(librarySystem.getScanner().nextLine());
                 if (input >= min && input <= max) {
                     return input;
                 }
