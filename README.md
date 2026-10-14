@@ -69,3 +69,72 @@ Created automatically on first run of either version:
 |---------|----------|----------|
 | Manager | `admin`  | `1234`   |
 | Staff   | `staff`  | `1234`   |
+
+## Structure
+
+```
+ap/
+├── exercises/
+│   ├── ex2/                 # lab 2 — console patterns & Pacman game engine
+│   ├── ex3/                 # lab 3 — classes & objects
+│   ├── ex4/                 # lab 4 — objects-early exercises
+│   ├── EX7/                 # storage abstraction: tabsplit / json / sqlite backends
+│   ├── midtermExam/         # midterm exam solutions
+│   ├── FinalExam/           # final exam solutions
+│   ├── MidtermProj/         # midterm project — console library manager
+│   └── projects/            # web tools — domain scraper, HTML parser, media downloader
+└── projects/
+    ├── finalproject/        # Library Management System (Java)
+    │   ├── LibrarySystem    # entry point & application core
+    │   ├── MenuHandler      # role-based console menus
+    │   ├── *Manager         # business logic per entity
+    │   ├── *FileManager     # Java-serialized *.dat persistence
+    │   └── models           # Book, Student, Employee, BorrowRecord, ...
+    └── finalproject_python/ # same system in Python
+        ├── main / library_system / menu_handler
+        ├── *_manager        # business logic per entity
+        ├── storage          # backend facade: SQLite (default) or pickle
+        ├── database / sqlite_storage
+        └── models           # one module per Java model class
+```
+
+## Architecture
+
+### Data flow
+
+```mermaid
+flowchart TD
+    S[Student] --> M[MenuHandler]
+    G[Guest] --> M
+    E[Employee / Manager] --> M
+    M --> L[LibrarySystem]
+    L --> BM[BookManager]
+    L --> SM[StudentManager]
+    L --> EM[EmployeeManager]
+    L --> BRM[BorrowManager]
+    L --> BRQ[BorrowRequestManager]
+    L --> PM[EmployeePerformanceManager]
+    BM --> ST[storage facade]
+    SM --> ST
+    EM --> ST
+    BRM --> ST
+    BRQ --> ST
+    PM --> ST
+    ST --> SQL[(library.db — SQLite)]
+    ST --> PKL[*.dat — pickle]
+```
+
+### Layers
+
+- **UI layer** — `MenuHandler` renders role-based console menus and collects input
+- **Application layer** — `LibrarySystem` owns session state, permission guards, and use-case orchestration
+- **Business layer** — one manager class per entity holds validation rules and workflows
+- **Persistence layer** — the `storage.py` facade dispatches to SQLite (default) or pickle; in Java, `*FileManager` classes serialize `*.dat` files
+- **Domain models** — plain data classes shared by every layer, kept in one-to-one correspondence between the Java and Python versions
+
+## Notes
+
+- The Java version persists with Java serialization; the Python version persists to SQLite through `sqlite_storage.py`, with the pickle `*.dat` backend selectable in `storage_config.json` — the managers never touch the backend directly.
+- Passwords are stored in plain text in both versions. This is an educational project; do not reuse any of it for real systems.
+- The `exercises/` folders are the weekly coursework (labs, exams, and a domain-scraping tools project) and are independent of the two final project implementations.
+- Both versions have zero third-party dependencies: JDK 8+ for Java, Python 3.8+ (standard library only) for Python.
